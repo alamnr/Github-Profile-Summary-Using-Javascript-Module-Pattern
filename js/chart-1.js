@@ -154,8 +154,7 @@ function createDoughnutChart(objectName, data) {
 }
 
 function createLineChart(objectName, data) {
-    var getterFunc=data['get'+objectName];
-    console.log(data);
+    
     new Chart(document.getElementById(objectName).getContext("2d"), {
         type: "line",
         data: {

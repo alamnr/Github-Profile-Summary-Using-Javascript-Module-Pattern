@@ -121,7 +121,7 @@ function getUserInfo(userName, data) {
     }
     if (this.readyState == 4 && this.status == 403) {
       var obj = JSON.parse(this.responseText);
-      console.log(obj);
+      //console.log(obj);
 
       indicatorDiv.className = 'progress-bar progress-bar-striped bg-danger';
       setTimeout(() => progressDiv.style.visibility = 'hidden', 1000);
@@ -130,7 +130,7 @@ function getUserInfo(userName, data) {
     }
     if (this.readyState == 4 && this.status == 404) {
       var response = JSON.parse(this.responseText);
-      console.log(response.message);
+      //console.log(response.message);
       indicatorDiv.className = 'progress-bar progress-bar-striped bg-danger';
       setTimeout(() => progressDiv.style.visibility = 'hidden', 1000);
       document.getElementById('errMsg').innerHTML = response.message;
@@ -138,7 +138,7 @@ function getUserInfo(userName, data) {
     }
     if (this.readyState == 4 && this.status == 200) {
        data.setUser(JSON.parse(this.responseText));
-       console.log(data.getUser());
+       //console.log(data.getUser());
       document.getElementById('profileImage').src = data.getUser().avatar_url;
       document.getElementById('profileImage').alt = data.getUser().name;
       document.getElementById('bio').innerHTML = data.getUser().bio;
@@ -157,13 +157,22 @@ function getUserInfo(userName, data) {
         }
 
       }
-      console.log(data.getQuarterCommitCount());
+      //console.log(data.getQuarterCommitCount());
       calculateQuarterCommitCount(data);
       //console.log(quarterCommitCount);
      
     }
 
   }
+
+  // Handle network errors
+  req.onerror = function() {
+      indicatorDiv.className = 'progress-bar progress-bar-striped bg-danger';
+      setTimeout(() => progressDiv.style.visibility = 'hidden', 1000);
+      document.getElementById('errMsg').innerHTML = 'Network Error';
+      document.getElementById('errMsg').style.color = 'red';
+  };
+
 
   xhr.send();
 }
@@ -174,7 +183,7 @@ function buildUserDetails(user) {
   var today = new Date();
   var year = Math.floor((today - then) / 31536000000);
   var output = `<ul class="list-group list-group-flush">
-                    <li class="list-group-item"><i class="fa fa-fw fa-user"></i> ${user.login} <p><small>( ${user.name} )</small></p>  </li>
+                    <li class="list-group-item"><i class="fa fa-fw fa-user"></i> ${user.login} <p><small>( ${user.name ? user.name : ''} )</small></p>  </li>
                     <li class="list-group-item"><i class="fa fa-fw fa-database"></i> ${user.public_repos} public repos <p><small>(Own Repos- ${user.ownRepos?user.ownRepos:'0'}, Forked- ${user.forkedRepos})</small></p> </li>
                     <li class="list-group-item"><i class="fa fa-fw fa-clock-o"></i>Joined GitHub ${year} Year Ago  </li>
                     <li class="list-group-item"><i class="fa fa-fw fa-envelope"></i> ${user.email ? user.email : ''}  </li>
@@ -203,7 +212,7 @@ function calculateQuarterCommitCount(data) {
       const unforkRepo = repos.filter(repo => {
         return repo.fork === false && repo.size !== 0
       })
-     // console.log('Own Repos -' + unforkRepo.length);
+      //console.log('Own Repos -' + unforkRepo.length);
       data.getUser().ownRepos= unforkRepo.length;
       data.getUser().forkedRepos= repos.length - unforkRepo.length;
       unforkRepo.forEach((myRepo,index, repoArray) => {
@@ -217,10 +226,24 @@ function calculateQuarterCommitCount(data) {
         makeCORSRequestForCommitCount(myRepo.commits_url.replace('{/sha}', ''),index, repoArray,data);
         
       })
+      if(unforkRepo.length===0){
+        buildUserDetails(data.getUser());
+        createLineChart('quarterCommitCount',data);
+
+        document.querySelector('#indicator').style.width = '100%';
+        document.querySelector('#indicator').innerHTML = '100%';
+        setTimeout(() => document.querySelector('.progress').style.visibility = 'hidden', 1000);
+      }
       
     }
   }
-
+  // Handle network errors
+  req.onerror = function() {
+    indicatorDiv.className = 'progress-bar progress-bar-striped bg-danger';
+    setTimeout(() => progressDiv.style.visibility = 'hidden', 1000);
+    document.getElementById('errMsg').innerHTML = 'Network Error';
+    document.getElementById('errMsg').style.color = 'red';
+  };
   xhr.send();
 }
 
@@ -357,7 +380,13 @@ function makeCORSRequestForCommitCount(url,index, repoArray,data) {
       
     }
   }
-
+  // Handle network errors
+  req.onerror = function() {
+    indicatorDiv.className = 'progress-bar progress-bar-striped bg-danger';
+    setTimeout(() => progressDiv.style.visibility = 'hidden', 1000);
+    document.getElementById('errMsg').innerHTML = 'Network Error';
+    document.getElementById('errMsg').style.color = 'red';
+  };
   xhr.send();
 
 }
